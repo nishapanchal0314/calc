@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#18214D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jisha Calc">
+<title>Jisha Enterprise Pvt Ltd – Rate × Bethak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F6;--surface:#FFFFFF;--ink:#18214D;--muted:#5B6486;--line:#D9DEEA;--head:#F3F5FA;
+  --accent:#0B7F7A;--bar:#18214D;--bar-ink:#FFFFFF;--bar-muted:#A9B3DB;--stripe:#0B7F7A;
+  color-scheme:light;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1430;--surface:#171D42;--ink:#EDF0FF;--muted:#9AA3C7;--line:#2A3265;--head:#1D244F;
+    --accent:#3CCFC7;--bar:#242C63;--stripe:#3CCFC7;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1430;--surface:#171D42;--ink:#EDF0FF;--muted:#9AA3C7;--line:#2A3265;--head:#1D244F;
+  --accent:#3CCFC7;--bar:#242C63;--stripe:#3CCFC7;color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+header{background:var(--bar);color:var(--bar-ink);padding:22px 20px 24px;border-bottom:4px solid var(--stripe)}
+header .in{max-width:560px;margin:0 auto}
+header h1{margin:0;font-size:24px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
+header p{margin:6px 0 0;font-size:14px;font-weight:500;color:var(--bar-muted)}
+main{max-width:560px;margin:0 auto;padding:18px 12px 28px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{background:var(--head);font-size:13px;font-weight:700;color:var(--muted);text-align:left;padding:12px 8px;border-bottom:1px solid var(--line)}
+td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th:first-child,td:first-child{padding-left:14px}
+th:last-child,td:last-child{padding-right:14px}
+th.r,td.amt{text-align:right}
+col.c-item{width:23%}col.c-rate{width:27%}col.c-bet{width:22%}col.c-amt{width:28%}
+.name{font-size:15px;font-weight:800}
+.amt{font-size:15px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+.amt.zero{color:var(--muted);font-weight:700}
+input{width:100%;min-width:0;height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:17px;font-weight:700;padding:0 8px;font-variant-numeric:tabular-nums}
+input::placeholder{color:var(--muted);opacity:.5}
+input:focus-visible{outline:3px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+tfoot td{background:var(--bar);color:var(--bar-ink);border:0;padding:16px 14px}
+tfoot .lbl{font-size:16px;font-weight:700;color:var(--bar-muted)}
+tfoot .tot{text-align:right;font-size:26px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.reset{margin:12px 0 0 4px;background:none;border:0;color:var(--muted);font:inherit;font-size:14px;font-weight:700;padding:10px 6px;cursor:pointer;text-decoration:underline}
+.reset:focus-visible{outline:3px solid var(--accent);border-radius:6px}
+</style>
+</head>
+<body>
+<header><div class="in">
+  <h1>Jisha Enterprise Pvt Ltd</h1>
+  <p>Rate × Bethak calculator</p>
+</div></header>
+<main>
+  <div class="card">
+    <table>
+      <colgroup><col class="c-item"><col class="c-rate"><col class="c-bet"><col class="c-amt"></colgroup>
+      <thead><tr><th>Item</th><th>Rate (₹)</th><th>Bethak %</th><th class="r">Amount</th></tr></thead>
+      <tbody id="body"></tbody>
+      <tfoot><tr><td class="lbl" colspan="2">Total amount</td><td class="tot" colspan="2" id="total">₹0.00</td></tr></tfoot>
+    </table>
+  </div>
+  <button class="reset" id="reset" type="button">Clear all values</button>
+</main>
+<script>
+const ITEMS=["Metalic","Yarn","Packing","Expense"];
+const KEY="rate-bethak-v1";
+const fmt=n=>"₹"+n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=v=>{const n=parseFloat(String(v).replace(/,/g,""));return isFinite(n)?n:0};
+const body=document.getElementById("body"),totalEl=document.getElementById("total");
+let saved={};
+try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){saved={}}
+ITEMS.forEach((name,i)=>{
+  const tr=document.createElement("tr");
+  tr.innerHTML='<td class="name">'+name+'</td>'+
+    '<td><input id="r'+i+'" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="'+name+' rate"></td>'+
+    '<td><input id="b'+i+'" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="'+name+' Bethak percent"></td>'+
+    '<td class="amt zero" id="a'+i+'">₹0.00</td>';
+  body.appendChild(tr);
+  const s=saved[name]||{};
+  document.getElementById("r"+i).value=s.r||"";
+  document.getElementById("b"+i).value=s.b||"";
+});
+function calc(){
+  let total=0;const store={};
+  ITEMS.forEach((name,i)=>{
+    const rv=document.getElementById("r"+i).value,bv=document.getElementById("b"+i).value;
+    const amt=num(rv)*num(bv)/100;total+=amt;
+    const el=document.getElementById("a"+i);
+    el.textContent=fmt(amt);el.classList.toggle("zero",amt===0);
+    store[name]={r:rv,b:bv};
+  });
+  totalEl.textContent=fmt(total);
+  try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}
+}
+document.addEventListener("input",e=>{
+  if(e.target.tagName==="INPUT"){e.target.value=e.target.value.replace(/[^0-9.,]/g,"");calc()}
+});
+document.getElementById("reset").addEventListener("click",()=>{
+  document.querySelectorAll("input").forEach(i=>i.value="");calc();
+});
+calc();
+</script>
+</body>
+</html>
